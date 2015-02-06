@@ -1,0 +1,21 @@
+{
+  "name": "sw-delta",
+  "description": "Service Worker Delta Encoding",
+  "keywords": [
+    "serviceworker",
+    "html",
+    "encoding"
+  ],
+  "version": "1.0.0",
+  "author": "Ben Kelly <ben@wanderview.com>",
+  "license": "BSD",
+  "dependencies": {
+    "compression": "~1.x",
+    "express": "~4.x",
+    "serve-static": "~1.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:wanderview/sw-delta.git"
+  }
+}
