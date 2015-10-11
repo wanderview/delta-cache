@@ -7,6 +7,6 @@ var compression = require('compression');
 var app = express();
 
 app.use(compression({ filter: function(req, res) { return true; } }));
-app.use(serveStatic('files', { index: true }));
+app.use(serveStatic('.', { index: true }));
 
 app.listen(3000);
