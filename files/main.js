@@ -7,26 +7,67 @@ function getResourceList(oldVersion, newVersion) {
   return fileList.map(function (f) {
     var file = newVersion + '/' + f;
     if (oldVersion !== 'No') {
-      file += '.fromv1.ubsdiff';
+      file += '.from' + oldVersion + '.ubsdiff';
     }
     file += '?cachebust=' + Date.now();
     return file;
   });
 }
 
+function loadPatchAndCacheResource(oldCache, newCache, loadFile, storeFile) {
+  return Promise.all([
+    oldCache.match(storeFile),
+    fetch(loadFile)
+  ]).then(function(results) {
+    return Promise.all(results.map(function(response) {
+      return response.arrayBuffer()
+    }));
+  }).then(function(results) {
+    var oldBuffer = results[0];
+    var patchBuffer = results[1];
+    var newBuffer = ubspatch(oldBuffer, patchBuffer);
+    return newCache.put(storeFile, new Response(newBuffer));
+  });
+}
+
+function loadPatchAndCacheAllResources(newCache, oldVersion, newVersion) {
+  var loadList = getResourceList(oldVersion, newVersion);
+  var storeList = fileList;
+  return caches.open(oldVersion).then(function(oldCache) {
+    var patchList = [];
+    for (var i = 0; i < loadList.length; ++i) {
+      patchList.push(loadPatchAndCacheResource(oldCache, newCache, loadList[i],
+                                               storeList[i]));
+    }
+    return Promise.all(patchList);
+  });
+}
+
+function loadAndCacheAllResources(cache, version) {
+  return Promise.all(getResourceList('No', version).map(function(file) {
+    return fetch(file);
+  })).then(function(responseList) {
+    var putList = [];
+    for (var i = 0; i < responseList.length; ++i) {
+      putList.push(cache.put(fileList[i], responseList[i]));
+    }
+    return Promise.all(putList);
+  });
+}
+
 function loadCache(version) {
   var oldVersion = 'No';
-  return new Promise(function(resolve, reject) {
-    resolve(getCurrentVersion());
-  }).then(function(v) {
+  return getCurrentVersion().then(function(v) {
     oldVersion = v;
     return caches.open(version);
   }).then(function(cache) {
-    if (oldVersion === 'No') {
-      return cache.addAll(getResourceList(oldVersion, version));
+    if (oldVersion === version) {
+      return;
     }
-    // TODO
-    return cache.addAll(getResourceList(oldVersion, version));
+    if (oldVersion === 'No') {
+      return loadAndCacheAllResources(cache, version);
+    }
+    return loadPatchAndCacheAllResources(cache, oldVersion, version);
   }).then(function() {
     if (oldVersion === 'No' || oldVersion === version) {
       return;
@@ -49,6 +90,14 @@ function getCurrentVersion() {
       return 'No';
     } else if (cacheList.length === 1) {
       return cacheList[0];
+    } else if (cacheList.length === 2) {
+      if (cacheList[0] === 'No') {
+        return cacheList[1];
+      } else if (cacheList[1] === 'No') {
+        return cacheList[0];
+      } else {
+        throw new Error('too many Cache objects!');
+      }
     } else {
       throw new Error('too many Cache objects!');
     }
@@ -60,10 +109,34 @@ function setStatus(text) {
 }
 
 function reportCurrentVersion() {
-  return getCurrentVersion().then(function(version) {
+  var version;
+  return getCurrentVersion().then(function(v) {
+    version = v;
+    return showResources(version);
+  }).then(function() {
     setStatus(version + ' resources loaded.');
   }).catch(function(e) {
     setStatus('Loading failed: ' + e);
+  });
+}
+
+function showResources(version) {
+  var storeList = fileList;
+  return caches.open(version).then(function(cache) {
+    return Promise.all(storeList.map(function(file) {
+      return cache.match(file);
+    }));
+  }).then(function(responseList) {
+    return Promise.all(responseList.map(function(response) {
+      if (!response) {
+        return 'Not loaded';
+      }
+      return response.text();
+    }));
+  }).then(function(textList) {
+    for (var i = 0; i < textList.length; ++i) {
+      document.getElementById(fileList[i]).textContent = textList[i];
+    }
   });
 }
 
