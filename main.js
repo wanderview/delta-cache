@@ -32,12 +32,11 @@ function loadPatchAndCacheResource(oldCache, newCache, loadFile, storeFile) {
 
 function loadPatchAndCacheAllResources(newCache, oldVersion, newVersion) {
   var loadList = getResourceList(oldVersion, newVersion);
-  var storeList = fileList;
   return caches.open(oldVersion).then(function(oldCache) {
     var patchList = [];
     for (var i = 0; i < loadList.length; ++i) {
       patchList.push(loadPatchAndCacheResource(oldCache, newCache, loadList[i],
-                                               storeList[i]));
+                                               fileList[i]));
     }
     return Promise.all(patchList);
   });
@@ -69,7 +68,7 @@ function loadCache(version) {
     }
     return loadPatchAndCacheAllResources(cache, oldVersion, version);
   }).then(function() {
-    if (oldVersion === 'No' || oldVersion === version) {
+    if (oldVersion === version) {
       return;
     }
     return caches.delete(oldVersion);
@@ -90,14 +89,6 @@ function getCurrentVersion() {
       return 'No';
     } else if (cacheList.length === 1) {
       return cacheList[0];
-    } else if (cacheList.length === 2) {
-      if (cacheList[0] === 'No') {
-        return cacheList[1];
-      } else if (cacheList[1] === 'No') {
-        return cacheList[0];
-      } else {
-        throw new Error('too many Cache objects!');
-      }
     } else {
       throw new Error('too many Cache objects!');
     }
@@ -125,9 +116,14 @@ function reportCurrentVersion(optionalTime) {
 }
 
 function showResources(version) {
-  var storeList = fileList;
+  if (version === 'No') {
+    for (var i = 0; i < fileList.length; ++i) {
+      document.getElementById(fileList[i]).textContent = 'Not loaded';
+      return;
+    }
+  }
   return caches.open(version).then(function(cache) {
-    return Promise.all(storeList.map(function(file) {
+    return Promise.all(fileList.map(function(file) {
       return cache.match(file);
     }));
   }).then(function(responseList) {
