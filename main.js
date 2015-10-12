@@ -108,13 +108,17 @@ function setStatus(text) {
   document.getElementById('status').textContent = text;
 }
 
-function reportCurrentVersion() {
+function reportCurrentVersion(optionalTime) {
   var version;
   return getCurrentVersion().then(function(v) {
     version = v;
     return showResources(version);
   }).then(function() {
-    setStatus(version + ' resources loaded.');
+    var msg = version + ' resources loaded.';
+    if (optionalTime !== undefined) {
+      msg += ' (' + ~~optionalTime + 'ms)';
+    }
+    setStatus(msg);
   }).catch(function(e) {
     setStatus('Loading failed: ' + e);
   });
@@ -142,8 +146,10 @@ function showResources(version) {
 
 function handleLoadClick(evt) {
   setStatus('Loading resources.');
+  var start = performance.now();
   loadCache(evt.target.dataset.version).then(function() {
-    return reportCurrentVersion();
+    var end = performance.now();
+    return reportCurrentVersion(end - start);
   }).catch(function(e) {
     setStatus('Loading failed: ' + e);
   });
@@ -151,8 +157,10 @@ function handleLoadClick(evt) {
 
 function handleClearClick(evt) {
   setStatus('Clearing resources.');
+  var start = performance.now();
   clearAllCaches().then(function() {
-    return reportCurrentVersion();
+    var end = performance.now();
+    return reportCurrentVersion(end - start);
   }).catch(function(e) {
     setStatus('Clearing failed: ' + e);
   });
