@@ -7,7 +7,7 @@ function getResourceList(oldVersion, newVersion) {
   return fileList.map(function (f) {
     var file = newVersion + '/' + f;
     if (oldVersion !== 'No') {
-      file += '.from' + oldVersion + '.ubsdiff';
+      file += '.from' + oldVersion + '.ubsdiff.txt';
     }
     file += '?cachebust=' + Date.now();
     return file;
