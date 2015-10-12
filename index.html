@@ -1,10 +1,17 @@
 <html>
 <head>
+<style>
+.status {
+  font-weight: bold;
+}
+
+.content-display {
+  height: 100px;
+  overflow-y: scroll;
+}
+</style>
 </head>
 <body>
-<div id='status'>
-No resources loaded.
-</div>
 <div>
 <button class='loadbutton' data-version='v1'>Load v1 Resources</button>
 </div>
@@ -18,12 +25,18 @@ No resources loaded.
 <button id='clearbutton'>Clear All Resources</button>
 </div>
 <hr>
-<div id='jquery.min.js' style='height:100px;overflow-y:scroll;'>
-No jquery loaded.
+<div id='status' class='status'>
+No resources loaded.
 </div>
 <hr>
-<div id='bootstrap.min.css' style='height:100px;overflow-y:scroll;'>
-No bootstrap loaded.
+<div class='status'>jquery contents:</div>
+<div id='jquery.min.js' class='content-display'>
+Not loaded
+</div>
+<hr>
+<div class='status'>bootstrap contents:</div>
+<div id='bootstrap.min.css' class='content-display'>
+Not loaded
 </div>
 <script src='ubspatch.js'></script>
 <script src='main.js'></script>
