@@ -119,8 +119,8 @@ function showResources(version) {
   if (version === 'No') {
     for (var i = 0; i < fileList.length; ++i) {
       document.getElementById(fileList[i]).textContent = 'Not loaded';
-      return;
     }
+    return;
   }
   return caches.open(version).then(function(cache) {
     return Promise.all(fileList.map(function(file) {
