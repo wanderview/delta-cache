@@ -14,6 +14,17 @@ function getResourceList(oldVersion, newVersion) {
   });
 }
 
+function cacheName(version) {
+  return 'delta-cache-' + version;
+}
+
+function versionFromCacheName(cacheName) {
+  if (cacheName.indexOf('delta-cache-') !== 0) {
+    return 'No';
+  }
+  return cacheName.slice('delta-cache-'.length);
+}
+
 function loadPatchAndCacheResource(oldCache, newCache, loadFile, storeFile) {
   return Promise.all([
     oldCache.match(storeFile),
@@ -32,7 +43,7 @@ function loadPatchAndCacheResource(oldCache, newCache, loadFile, storeFile) {
 
 function loadPatchAndCacheAllResources(newCache, oldVersion, newVersion) {
   var loadList = getResourceList(oldVersion, newVersion);
-  return caches.open(oldVersion).then(function(oldCache) {
+  return caches.open(cacheName(oldVersion)).then(function(oldCache) {
     var patchList = [];
     for (var i = 0; i < loadList.length; ++i) {
       patchList.push(loadPatchAndCacheResource(oldCache, newCache, loadList[i],
@@ -58,7 +69,7 @@ function loadCache(version) {
   var oldVersion = 'No';
   return getCurrentVersion().then(function(v) {
     oldVersion = v;
-    return caches.open(version);
+    return caches.open(cacheName(version));
   }).then(function(cache) {
     if (oldVersion === version) {
       return;
@@ -71,13 +82,15 @@ function loadCache(version) {
     if (oldVersion === version) {
       return;
     }
-    return caches.delete(oldVersion);
+    return caches.delete(cacheName(oldVersion));
   });
 }
 
 function clearAllCaches() {
   return caches.keys().then(function(cacheList) {
-    return Promise.all(cacheList.map(function(cacheName) {
+    return Promise.all(cacheList.filter(function(cacheName) {
+      return cacheName.indexOf('delta-cache-') === 0;
+    }).map(function(cacheName) {
       return caches.delete(cacheName);
     }));
   });
@@ -85,10 +98,13 @@ function clearAllCaches() {
 
 function getCurrentVersion() {
   return caches.keys().then(function(cacheList) {
+    cacheList = cacheList.filter(function(name) {
+      return name.indexOf('delta-cache-') === 0;
+    });
     if (cacheList.length < 1) {
       return 'No';
     } else if (cacheList.length === 1) {
-      return cacheList[0];
+      return versionFromCacheName(cacheList[0]);
     } else {
       throw new Error('too many Cache objects!');
     }
@@ -122,7 +138,7 @@ function showResources(version) {
     }
     return;
   }
-  return caches.open(version).then(function(cache) {
+  return caches.open(cacheName(version)).then(function(cache) {
     return Promise.all(fileList.map(function(file) {
       return cache.match(file);
     }));
